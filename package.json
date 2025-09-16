@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Backend Generation Specification: RAG-Powered News Chatbot\r 1. Project Overview",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/community": "^0.3.55",
+    "@langchain/core": "^0.3.75",
+    "@pinecone-database/pinecone": "^6.1.2",
+    "@upstash/redis": "^1.35.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "jinaai": "^0.1.0",
+    "rss-parser": "^3.13.0",
+    "uuid": "^13.0.0"
+  }
+}

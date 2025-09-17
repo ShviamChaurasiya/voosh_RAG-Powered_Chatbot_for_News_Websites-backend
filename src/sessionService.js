@@ -18,7 +18,7 @@ export function createSession() {
 export async function getChatHistory(sessionId) {
     const historyKey = `chat:${sessionId}`;
     const data = await redis.get(historyKey);
-    return data ? data : [];
+    return data ? JSON.parse(data) : [];
 }
 
 /**

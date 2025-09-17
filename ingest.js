@@ -9,7 +9,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const ingestData = async () => {
     console.log('Starting ingestion process with Google Embeddings...');
     
-    // const articles = await fetchNewsArticles('https://feeds.bbci.co.uk/news/rss.xml?edition=int');
     const articles = await fetchNewsArticles('http://rss.cnn.com/rss/cnn_topstories.rss');
     if (!articles || articles.length === 0) {
         console.log("No articles fetched. Exiting ingestion.");
@@ -17,29 +16,31 @@ const ingestData = async () => {
     }
 
     for (let i = 0; i < articles.length; i += BATCH_SIZE) {
-        const batchArticles = articles.slice(i, i + BATCH_SIZE);
+        const batch = articles.slice(i, i + BATCH_SIZE);
         console.log(`Processing batch starting at index ${i}...`);
 
-        const texts = batchArticles.map(article => article.contentSnippet).filter(Boolean);
-        if (texts.length === 0) {
-            console.log("Skipping empty batch.");
+        // --- THE FIX IS HERE ---
+        // First, filter the batch to only include articles that have content.
+        const articlesWithContent = batch.filter(article => article.contentSnippet && article.contentSnippet.trim() !== '');
+
+        if (articlesWithContent.length === 0) {
+            console.log("Skipping batch because it contains no articles with content.");
             continue;
         }
 
         try {
-            // FIX #1: Correctly format the content for the Google API
-            const requests = texts.map(text => ({
-                content: {
-                    parts: [{ text }],
-                    role: "user" // Role is required for content structure
-                }
-            }));
+            // Now, get the texts from this clean list.
+            const texts = articlesWithContent.map(article => article.contentSnippet);
 
-            const result = await embeddingModel.batchEmbedContents({ requests });
+            // Generate embeddings for the batch.
+            const result = await embeddingModel.batchEmbedContents({
+                requests: texts.map(text => ({ content: { parts: [{ text }], role: "user" } })),
+            });
             const batchEmbeddings = result.embeddings.map(e => e.values);
 
-            const vectors = batchArticles.map((article, index) => ({
-                id: article.guid,
+            // Prepare vectors using the clean list, ensuring all arrays are in sync.
+            const vectors = articlesWithContent.map((article, index) => ({
+                id: article.guid || article.link, // Use link as a fallback for a unique ID
                 values: batchEmbeddings[index],
                 metadata: {
                     text: article.contentSnippet,
@@ -48,6 +49,7 @@ const ingestData = async () => {
                 }
             }));
 
+            // Upsert the batch to Pinecone.
             await pineconeIndex.upsert(vectors);
             console.log(`SUCCESS: Upserted batch of ${vectors.length} articles.`);
 
@@ -55,8 +57,7 @@ const ingestData = async () => {
             console.error(`Error processing batch starting at index ${i}:`, error.message);
         }
         
-        // FIX #2: Add a delay to avoid rate limiting
-        await delay(1000); // Wait for 1 second before the next batch
+        await delay(1000); // Wait for 1 second to respect rate limits.
     }
 
     console.log(`Ingestion complete. ${articles.length} articles processed.`);

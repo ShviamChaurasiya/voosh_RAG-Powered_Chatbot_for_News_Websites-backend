@@ -114,8 +114,3 @@ The server exposes the following REST API endpoints:
 
 ---
 
-## ⚠️ Important Note for Developers
-
-There appears to be an issue in the current implementation. The files `src/ragService.js` and `src/ingest.js` attempt to import an `embeddings` object from `src/config.js` to generate vector embeddings. However, `src/config.js` does not configure or export this object.
-
-To fix this, you will likely need to create and export an embedding model instance in `config.js`, potentially using the `@google/generative-ai` package, and then import it correctly in the other files.

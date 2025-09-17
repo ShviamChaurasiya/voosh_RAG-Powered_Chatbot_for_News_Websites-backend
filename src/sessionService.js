@@ -17,8 +17,9 @@ export function createSession() {
  */
 export async function getChatHistory(sessionId) {
     const historyKey = `chat:${sessionId}`;
+    // The Upstash client automatically parses the JSON. We just return the data.
     const data = await redis.get(historyKey);
-    return data ? JSON.parse(data) : [];
+    return data ? data : []; // THE FIX IS HERE: Removed JSON.parse()
 }
 
 /**
@@ -29,9 +30,7 @@ export async function getChatHistory(sessionId) {
 export async function updateChatHistory(sessionId, history) {
     const historyKey = `chat:${sessionId}`;
     const dataToStore = JSON.stringify(history);
-
-    // THE CHANGE IS HERE: Increased expiry from 60 seconds to 7 days (604800 seconds)
-    // This allows sessions to be resumed long after they are created.
+    // Set expiry to 7 days to allow users to resume sessions
     await redis.set(historyKey, dataToStore, { ex: 604800 });
 }
 

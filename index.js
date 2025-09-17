@@ -26,7 +26,6 @@ app.post('/api/chat', async (req, res) => {
         const botResponse = await getQueryResponse(message);
         const history = await getChatHistory(sessionId);
 
-        // Use a consistent message format
         history.push({ sender: 'user', text: message });
         history.push({ sender: 'bot', text: botResponse });
 
